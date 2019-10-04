@@ -1,6 +1,6 @@
 # python-linguakit
 
-## Installation
+## Local Installation
 
 ### Install dependencies (Ubuntu)
 ```bash
@@ -23,6 +23,16 @@ Downloading linguakit-streaming...
 Installing linguakit-streaming...
 [OK!]
 Installing the Python wrapper...
+```
+
+## Docker Container
+
+```bash
+$ docker run -ti brunneis/python-linguakit
+Python 3.7.3 (default, Jun 19 2019, 08:47:56) 
+[GCC 7.4.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>>
 ```
 
 ## Existing Modules
