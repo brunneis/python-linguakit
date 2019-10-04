@@ -11,7 +11,7 @@ $ apt-get update \
 ```
 
 ### Install the Python wrapper
-```python
+```bash
 $ pip install linguakit
 ```
 > After the installation, the first import of the `linguakit` package will trigger the download of `linguakit-streaming` with all the needed Perl scripts if they are not yet present.
