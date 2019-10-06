@@ -54,16 +54,13 @@ class PerlModule:
         output = output.split('\n')[2:]
         return output
 
-    def exec(self, cmd):
-        self.child.sendline(cmd)
-        self._expect_prompt()
-        return self._read()
-
-    def run(self, items):
+    def exec(self, items):
         items_str = self.list_to_perl_str(items)
         escaped_items_str = PerlModule.escape_perl_chars(items_str)
         # print(f'{escaped_items_str};')
-        return self.exec(f'{escaped_items_str};')
+        self.child.sendline(f'{escaped_items_str};')
+        self._expect_prompt()
+        return self._read()
 
     @staticmethod
     def escape_perl_chars(text):
@@ -101,10 +98,47 @@ class TaggerModule(PerlModule):
 class SentimentModule(PerlModule):
     def __init__(self, lang):
         super().__init__(f'{LINGUAKIT_PATH}sentiment/nbayes.perl')
-        self.child.sendline(f'load("{lang}");')
+        self.child.sendline(f'init("{lang}");')
 
     def _read(self):
         return ' '.join(super()._read()).split('\t')[1:]
+
+
+class LemmaModule(PerlModule):
+    def __init__(self, lang):
+        super().__init__(f'{LINGUAKIT_PATH}tagger/{lang}/lemma-{lang}_exe.perl')
+
+
+class KeywordsModule(PerlModule):
+    def __init__(self, lang):
+        super().__init__(f'{LINGUAKIT_PATH}keywords/keywords_exe.perl')
+        self.child.sendline(f'init("{lang}");')
+
+    def exec(self, items, th=30):
+        items = [str(th)] + items
+        return super().exec(items)
+
+    # def _read(self):
+    #     return [tuple(item.split('\t')) for item in super()._read()]
+
+
+class SummarizerModule(PerlModule):
+    def __init__(self):
+        super().__init__(f'{LINGUAKIT_PATH}summarizer/summarizer_exe.perl')
+
+    def exec(self, sentences, keywords, percentage):
+        sentences_str = self.list_to_perl_str(sentences)
+        escaped_sentences_str = PerlModule.escape_perl_chars(sentences_str)
+        self.child.sendline(f'{escaped_sentences_str};')
+
+        keywords_str = self.list_to_perl_str(keywords)
+        escaped_keywords_str = PerlModule.escape_perl_chars(keywords_str)
+        self.child.sendline(f'{escaped_keywords_str};')
+
+        self.child.sendline(f'"{percentage}";')
+
+        self._expect_prompt()
+        return self._read()
 
 
 class Sentiment:
@@ -117,12 +151,12 @@ class Sentiment:
         self.sentiment = SentimentModule(lang)
 
     def exec(self, text):
-        sentences_o = self.sentences_es.run(text)
-        tokens_o = self.tokens_es.run(sentences_o)
-        splitter_o = self.splitter_es.run(tokens_o)
-        ner_o = self.ner_es.run(splitter_o)
-        tagger_o = self.tagger_es.run(ner_o)
-        sentiment_o = self.sentiment.run(tagger_o)
+        sentences_o = self.sentences_es.exec(text)
+        tokens_o = self.tokens_es.exec(sentences_o)
+        splitter_o = self.splitter_es.exec(tokens_o)
+        ner_o = self.ner_es.exec(splitter_o)
+        tagger_o = self.tagger_es.exec(ner_o)
+        sentiment_o = self.sentiment.exec(tagger_o)
 
         tag, proba = sentiment_o
         if tag == 'POSITIVE':
@@ -133,3 +167,26 @@ class Sentiment:
             polarity = 0
 
         return {'polarity': polarity, 'proba': proba}
+
+
+class Summarizer:
+    def __init__(self, lang):
+        self.sentences_es = SentencesModule(lang)
+        self.tokens_es = TokensModule(lang)
+        self.splitter_es = SplitterModule(lang)
+        self.lemma_es = LemmaModule(lang)
+        self.tagger_es = TaggerModule(lang)
+        self.keywords = KeywordsModule(lang)
+        self.summarizer = SummarizerModule()
+
+    def exec(self, text, percentage=50):
+        sentences_o = self.sentences_es.exec(text)
+        tokens_o = self.tokens_es.exec(sentences_o)
+        splitter_o = self.splitter_es.exec(tokens_o)
+        lemma_o = self.lemma_es.exec(splitter_o)
+        tagger_o = self.tagger_es.exec(lemma_o)
+        keywords_o = self.keywords.exec(tagger_o, percentage)
+
+        summarizer_o = self.summarizer.exec(splitter_o, keywords_o, percentage)
+
+        print(summarizer_o)
