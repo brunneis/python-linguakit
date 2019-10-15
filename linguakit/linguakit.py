@@ -98,7 +98,7 @@ class TaggerModule(PerlModule):
 class SentimentModule(PerlModule):
     def __init__(self, lang):
         super().__init__(f'{LINGUAKIT_PATH}sentiment/nbayes.perl')
-        self.child.sendline(f'init("{lang}");')
+        self.child.sendline(f'load("{lang}");')
 
     def _read(self):
         return ' '.join(super()._read()).split('\t')[1:]
