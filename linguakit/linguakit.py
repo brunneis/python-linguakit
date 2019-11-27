@@ -108,7 +108,6 @@ class SentimentModule(PerlModule):
 
     def _read(self):
         read = super()._read()
-        print(f'READ ----> {read}')
         return ' '.join(read).split('\t')[1:]
         # return ' '.join(super()._read()).split('\t')[1:]
 
@@ -178,24 +177,24 @@ class Sentiment:
         return {'polarity': polarity, 'proba': proba}
 
 
-class Summarizer:
-    def __init__(self, lang):
-        self.sentences_es = SentencesModule(lang)
-        self.tokens_es = TokensModule(lang)
-        self.splitter_es = SplitterModule(lang)
-        self.lemma_es = LemmaModule(lang)
-        self.tagger_es = TaggerModule(lang)
-        self.keywords = KeywordsModule(lang)
-        self.summarizer = SummarizerModule()
+# class Summarizer:
+#     def __init__(self, lang):
+#         self.sentences_es = SentencesModule(lang)
+#         self.tokens_es = TokensModule(lang)
+#         self.splitter_es = SplitterModule(lang)
+#         self.lemma_es = LemmaModule(lang)
+#         self.tagger_es = TaggerModule(lang)
+#         self.keywords = KeywordsModule(lang)
+#         self.summarizer = SummarizerModule()
 
-    def exec(self, text, percentage=50):
-        sentences_o = self.sentences_es.exec(text)
-        tokens_o = self.tokens_es.exec(sentences_o)
-        splitter_o = self.splitter_es.exec(tokens_o)
-        lemma_o = self.lemma_es.exec(splitter_o)
-        tagger_o = self.tagger_es.exec(lemma_o)
-        keywords_o = self.keywords.exec(tagger_o, percentage)
+#     def exec(self, text, percentage=50):
+#         sentences_o = self.sentences_es.exec(text)
+#         tokens_o = self.tokens_es.exec(sentences_o)
+#         splitter_o = self.splitter_es.exec(tokens_o)
+#         lemma_o = self.lemma_es.exec(splitter_o)
+#         tagger_o = self.tagger_es.exec(lemma_o)
+#         keywords_o = self.keywords.exec(tagger_o, percentage)
 
-        summarizer_o = self.summarizer.exec(splitter_o, keywords_o, percentage)
+#         summarizer_o = self.summarizer.exec(splitter_o, keywords_o, percentage)
 
-        print(summarizer_o)
+#         print(summarizer_o)

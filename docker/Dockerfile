@@ -12,5 +12,5 @@ RUN \
 
 RUN \
 	pip install --upgrade pip \
-	&& pip install linguakit \
+	&& pip install linguakit==0.0.7a0 \
 	&& python -c "import linguakit"
