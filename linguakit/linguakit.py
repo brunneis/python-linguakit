@@ -43,10 +43,24 @@ class PerlModule:
     def _expect_prompt(self):
         self.child.expect('\nEOC')
 
-    def list_to_perl_str(self, items):
+    @staticmethod
+    def list_to_perl_str(items):
         if isinstance(items, list):
             items = '", "'.join(items)
         return f'("{items}")'
+
+    @staticmethod
+    def escape_perl_chars(items):
+        if isinstance(items, str):
+            items = [items]
+        chars = ['@', '$', '"']
+        escaped_items = []
+        for item in items:
+            escaped_item = item
+            for char in chars:
+                escaped_item = escaped_item.replace(char, f'\\{char}')
+            escaped_items.append(escaped_item)
+        return escaped_items
 
     def _read(self):
         output = self.child.before
@@ -55,19 +69,11 @@ class PerlModule:
         return output
 
     def exec(self, items):
-        items_str = self.list_to_perl_str(items)
-        escaped_items_str = PerlModule.escape_perl_chars(items_str)
-        # print(f'{escaped_items_str};')
+        escaped_items = PerlModule.escape_perl_chars(items)
+        escaped_items_str = PerlModule.list_to_perl_str(escaped_items)
         self.child.sendline(f'{escaped_items_str};')
         self._expect_prompt()
         return self._read()
-
-    @staticmethod
-    def escape_perl_chars(text):
-        chars = ['@', '$']
-        for char in chars:
-            text = text.replace(char, f'\\{char}')
-        return text
 
 
 class SentencesModule(PerlModule):
@@ -101,7 +107,10 @@ class SentimentModule(PerlModule):
         self.child.sendline(f'init("{lang}");')
 
     def _read(self):
-        return ' '.join(super()._read()).split('\t')[1:]
+        read = super()._read()
+        print(f'READ ----> {read}')
+        return ' '.join(read).split('\t')[1:]
+        # return ' '.join(super()._read()).split('\t')[1:]
 
 
 class LemmaModule(PerlModule):
@@ -122,23 +131,23 @@ class KeywordsModule(PerlModule):
     #     return [tuple(item.split('\t')) for item in super()._read()]
 
 
-class SummarizerModule(PerlModule):
-    def __init__(self):
-        super().__init__(f'{LINGUAKIT_PATH}summarizer/summarizer_exe.perl')
+# class SummarizerModule(PerlModule):
+#     def __init__(self):
+#         super().__init__(f'{LINGUAKIT_PATH}summarizer/summarizer_exe.perl')
 
-    def exec(self, sentences, keywords, percentage):
-        sentences_str = self.list_to_perl_str(sentences)
-        escaped_sentences_str = PerlModule.escape_perl_chars(sentences_str)
-        self.child.sendline(f'{escaped_sentences_str};')
+#     def exec(self, sentences, keywords, percentage):
+#         sentences_str = PerlModule.list_to_perl_str(sentences)
+#         escaped_sentences_str = PerlModule.escape_perl_chars(sentences_str)
+#         self.child.sendline(f'{escaped_sentences_str};')
 
-        keywords_str = self.list_to_perl_str(keywords)
-        escaped_keywords_str = PerlModule.escape_perl_chars(keywords_str)
-        self.child.sendline(f'{escaped_keywords_str};')
+#         keywords_str = PerlModule.list_to_perl_str(keywords)
+#         escaped_keywords_str = PerlModule.escape_perl_chars(keywords_str)
+#         self.child.sendline(f'{escaped_keywords_str};')
 
-        self.child.sendline(f'"{percentage}";')
+#         self.child.sendline(f'"{percentage}";')
 
-        self._expect_prompt()
-        return self._read()
+#         self._expect_prompt()
+#         return self._read()
 
 
 class Sentiment:
